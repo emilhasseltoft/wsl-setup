@@ -178,6 +178,12 @@ sed -i '/^# >>> wsl-setup managed/,/^# <<< wsl-setup managed/d' "$ZSHRC"
 cat >> "$ZSHRC" <<'EOF'
 
 # >>> wsl-setup managed (do not edit this block) >>>
+# Workaround for an OMZ bug where the async git prompt errors on every
+# command when these aren't pre-initialized. Safe: reassignments by themes
+# or OMZ itself still work normally.
+: ${RPROMPT:=""}
+: ${_omz_git_prompt_info:=""}
+
 # Sourced after oh-my-zsh.sh so order-sensitive plugins work correctly.
 [ -f "$ZSH_CUSTOM/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" ] && \
   source "$ZSH_CUSTOM/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
