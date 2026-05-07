@@ -277,11 +277,24 @@ if gh auth status >/dev/null 2>&1; then
   msg "Already authenticated with GitHub. Skipping login."
 else
   echo "Next, you'll log in to GitHub via your browser."
-  echo "Choose: GitHub.com → SSH → Login with a web browser."
+  echo "A one-time code will appear in the terminal — copy it, then paste it"
+  echo "into the browser tab that opens, and approve the GitHub CLI."
   echo
   read -r -p "Press Enter to start..." _ </dev/tty
   gh auth login --hostname github.com --git-protocol ssh --web </dev/tty
 fi
+
+echo
+echo "Next: setting up an SSH key for GitHub. An SSH key is like a digital"
+echo "ID card — once it's installed, 'git push' and 'git pull' will work"
+echo "without you typing a password every time."
+echo
+echo "Heads up: GitHub may open your browser a SECOND time during this step."
+echo "That's because the first login only granted basic access — uploading an"
+echo "SSH key needs an additional permission. If a browser tab opens, just"
+echo "approve gh again and come back here. After that, you're done — future"
+echo "runs of this script won't ask again."
+echo
 
 # gh's auth flow doesn't reliably create + upload an SSH key, so do it
 # explicitly. Idempotent: skips generation if a key already exists, and
@@ -296,7 +309,9 @@ fi
 
 # 2. Ensure the gh token has admin:public_key so we can upload the key.
 if ! gh auth status 2>&1 | grep -q "admin:public_key"; then
-  msg "Adding admin:public_key scope to gh auth (opens browser)..."
+  echo
+  msg "Need to grant gh permission to upload SSH keys — opening browser..."
+  msg "(Same flow as before: copy the code, paste it in the browser, approve.)"
   gh auth refresh -h github.com -s admin:public_key </dev/tty
 fi
 
@@ -331,6 +346,10 @@ if [ "$CURRENT_SHELL" != "$ZSH_PATH" ]; then
   sudo chsh -s "$ZSH_PATH" "$USER"
   msg "Default shell changed to zsh."
 fi
+
+# Pre-create ~/code/ so it exists even if the user skips cloning a repo
+# in the first-run walkthrough.
+mkdir -p "$HOME/code"
 
 mkdir -p "$HOME/.config"
 cat > "$HOME/.config/wsl-setup-firstrun.zsh" <<'FIRSTRUN_EOF'
@@ -383,7 +402,6 @@ print
 read -r "?Repo URL: " REPO_URL
 
 if [[ -n "$REPO_URL" ]]; then
-  mkdir -p "$HOME/code"
   cd "$HOME/code"
   if git clone "$REPO_URL"; then
     REPO_NAME="${${REPO_URL##*/}%.git}"
