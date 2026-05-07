@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# WSL setup script for the team.
+# WSL setup script.
 # Runs inside a fresh Ubuntu WSL shell. Idempotent — safe to re-run on failure.
 #
 # One-liner:
