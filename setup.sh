@@ -181,8 +181,11 @@ cat >> "$ZSHRC" <<'EOF'
 # Workaround for an OMZ bug where the async git prompt errors on every
 # command when these aren't pre-initialized. Safe: reassignments by themes
 # or OMZ itself still work normally.
+typeset -gA _OMZ_ASYNC_OUTPUT
 : ${RPROMPT:=""}
+: ${RPS1:=""}
 : ${_omz_git_prompt_info:=""}
+: ${_OMZ_ASYNC_OUTPUT[_omz_git_prompt_info]:=""}
 
 # Sourced after oh-my-zsh.sh so order-sensitive plugins work correctly.
 [ -f "$ZSH_CUSTOM/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" ] && \
