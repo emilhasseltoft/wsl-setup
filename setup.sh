@@ -29,6 +29,24 @@ step() {
   echo -e "${GREEN}━━━ Step ${CURRENT_STEP}/${TOTAL_STEPS}: $1 ━━━${NC}"
 }
 
+# Run a command up to 3 times with a 5s delay. For network ops that may hit
+# transient DNS/connectivity failures.
+retry() {
+  local n=1 max=3 delay=5
+  while true; do
+    if "$@"; then
+      return 0
+    fi
+    if (( n >= max )); then
+      err "Command failed after ${max} attempts: $*"
+      return 1
+    fi
+    warn "Attempt ${n}/${max} failed, retrying in ${delay}s..."
+    sleep "$delay"
+    n=$((n + 1))
+  done
+}
+
 SCRIPT_PATH="${BASH_SOURCE[0]:-$0}"
 on_error() {
   local exit_code=$?
@@ -107,21 +125,32 @@ step "Installing Zsh, Oh My Zsh, and plugins"
 sudo apt-get install -y zsh
 
 if [ ! -d "$HOME/.oh-my-zsh" ]; then
-  RUNZSH=no CHSH=no sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+  # Download installer to a file first so a curl failure is loud (not swallowed
+  # by command substitution into an empty sh -c).
+  OMZ_INSTALLER="$(mktemp)"
+  retry curl -fsSL --retry 3 --retry-delay 5 --retry-all-errors \
+    https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh \
+    -o "$OMZ_INSTALLER"
+  RUNZSH=no CHSH=no sh "$OMZ_INSTALLER"
+  rm -f "$OMZ_INSTALLER"
+  if [ ! -d "$HOME/.oh-my-zsh" ]; then
+    err "Oh My Zsh installer ran but ~/.oh-my-zsh wasn't created. Re-run the script."
+    exit 1
+  fi
 fi
 
 ZSH_CUSTOM="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}"
 
 # fzf
 if [ ! -d "$HOME/.fzf" ]; then
-  git clone --depth 1 https://github.com/junegunn/fzf.git "$HOME/.fzf"
+  retry git clone --depth 1 https://github.com/junegunn/fzf.git "$HOME/.fzf"
 fi
 "$HOME/.fzf/install" --key-bindings --completion --no-update-rc >/dev/null
 
 clone_or_skip() {
   local url="$1" dir="$2"
   if [ ! -d "$dir" ]; then
-    git clone --depth 1 "$url" "$dir"
+    retry git clone --depth 1 "$url" "$dir"
   fi
 }
 clone_or_skip https://github.com/Aloxaf/fzf-tab.git                       "$ZSH_CUSTOM/plugins/fzf-tab"
