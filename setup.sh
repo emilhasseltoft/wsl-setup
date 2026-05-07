@@ -12,10 +12,10 @@ set -euo pipefail
 LOG_FILE="/tmp/wsl-setup-$(date +%Y%m%d-%H%M%S).log"
 exec > >(tee -a "$LOG_FILE") 2>&1
 
-GREEN="\033[1;32m"
-YELLOW="\033[1;33m"
-RED="\033[1;31m"
-NC="\033[0m"
+GREEN=$'\033[1;32m'
+YELLOW=$'\033[1;33m'
+RED=$'\033[1;31m'
+NC=$'\033[0m'
 
 msg()  { echo -e "${GREEN}>>${NC} $1"; }
 warn() { echo -e "${YELLOW}!!${NC} $1"; }
@@ -190,6 +190,12 @@ bindkey '^[[B' history-substring-search-down
 export FZF_DEFAULT_OPTS='--height 40% --layout=reverse --border'
 [ -f "$HOME/.fzf.zsh" ] && source "$HOME/.fzf.zsh"
 
+# ~/.local/bin contains user-installed binaries (mise, claude, etc.)
+case ":$PATH:" in
+  *":$HOME/.local/bin:"*) ;;
+  *) export PATH="$HOME/.local/bin:$PATH" ;;
+esac
+
 # mise (per-project runtime versions)
 [ -x "$HOME/.local/bin/mise" ] && eval "$($HOME/.local/bin/mise activate zsh)"
 
@@ -248,6 +254,9 @@ step "Installing Claude Code"
 if ! command -v claude >/dev/null 2>&1 && [ ! -x "$HOME/.local/bin/claude" ]; then
   retry bash -c 'curl -fsSL --retry 3 --retry-delay 5 --retry-all-errors https://claude.ai/install.sh | bash'
 fi
+msg "Note: Claude's installer warns about ~/.local/bin not being in PATH and"
+msg "      suggests editing ~/.bashrc — you can ignore that."
+msg "      This script adds ~/.local/bin to PATH in zsh (your shell after restart)."
 
 # ---------- step 10: GitHub auth ----------
 step "Authenticating with GitHub"
