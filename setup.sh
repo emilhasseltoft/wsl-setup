@@ -199,7 +199,7 @@ step "Installing Docker (official repo)"
 
 sudo install -m 0755 -d /etc/apt/keyrings
 if [ ! -f /etc/apt/keyrings/docker.asc ]; then
-  sudo curl -fsSL --retry 3 --retry-delay 5 --retry-all-errors https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+  retry sudo curl -fsSL --retry 3 --retry-delay 5 --retry-all-errors https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
   sudo chmod a+r /etc/apt/keyrings/docker.asc
 fi
 
@@ -222,8 +222,7 @@ fi
 step "Installing GitHub CLI"
 
 if ! command -v gh >/dev/null 2>&1; then
-  curl -fsSL --retry 3 --retry-delay 5 --retry-all-errors https://cli.github.com/packages/githubcli-archive-keyring.gpg \
-    | sudo dd of=/etc/apt/keyrings/githubcli-archive-keyring.gpg status=none
+  retry bash -c 'curl -fsSL --retry 3 --retry-delay 5 --retry-all-errors https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/etc/apt/keyrings/githubcli-archive-keyring.gpg status=none'
   sudo chmod 644 /etc/apt/keyrings/githubcli-archive-keyring.gpg
   ARCH="$(dpkg --print-architecture)"
   echo "deb [arch=${ARCH} signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" \
