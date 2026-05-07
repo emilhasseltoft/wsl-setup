@@ -170,7 +170,7 @@ step "Installing Docker (official repo)"
 
 sudo install -m 0755 -d /etc/apt/keyrings
 if [ ! -f /etc/apt/keyrings/docker.asc ]; then
-  sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+  sudo curl -fsSL --retry 3 --retry-delay 5 --retry-all-errors https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
   sudo chmod a+r /etc/apt/keyrings/docker.asc
 fi
 
@@ -193,7 +193,7 @@ fi
 step "Installing GitHub CLI"
 
 if ! command -v gh >/dev/null 2>&1; then
-  curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
+  curl -fsSL --retry 3 --retry-delay 5 --retry-all-errors https://cli.github.com/packages/githubcli-archive-keyring.gpg \
     | sudo dd of=/etc/apt/keyrings/githubcli-archive-keyring.gpg status=none
   sudo chmod 644 /etc/apt/keyrings/githubcli-archive-keyring.gpg
   ARCH="$(dpkg --print-architecture)"
@@ -206,13 +206,13 @@ fi
 # ---------- step 8: mise ----------
 step "Installing mise"
 if [ ! -x "$HOME/.local/bin/mise" ]; then
-  curl -fsSL https://mise.run | sh
+  curl -fsSL --retry 3 --retry-delay 5 --retry-all-errors https://mise.run | sh
 fi
 
 # ---------- step 9: Claude Code ----------
 step "Installing Claude Code"
 if ! command -v claude >/dev/null 2>&1 && [ ! -x "$HOME/.local/bin/claude" ]; then
-  curl -fsSL https://claude.ai/install.sh | bash
+  curl -fsSL --retry 3 --retry-delay 5 --retry-all-errors https://claude.ai/install.sh | bash
 fi
 
 # ---------- step 10: GitHub auth ----------
