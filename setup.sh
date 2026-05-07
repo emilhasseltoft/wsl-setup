@@ -235,13 +235,13 @@ fi
 # ---------- step 8: mise ----------
 step "Installing mise"
 if [ ! -x "$HOME/.local/bin/mise" ]; then
-  curl -fsSL --retry 3 --retry-delay 5 --retry-all-errors https://mise.run | sh
+  retry bash -c 'curl -fsSL --retry 3 --retry-delay 5 --retry-all-errors https://mise.run | sh'
 fi
 
 # ---------- step 9: Claude Code ----------
 step "Installing Claude Code"
 if ! command -v claude >/dev/null 2>&1 && [ ! -x "$HOME/.local/bin/claude" ]; then
-  curl -fsSL --retry 3 --retry-delay 5 --retry-all-errors https://claude.ai/install.sh | bash
+  retry bash -c 'curl -fsSL --retry 3 --retry-delay 5 --retry-all-errors https://claude.ai/install.sh | bash'
 fi
 
 # ---------- step 10: GitHub auth ----------
