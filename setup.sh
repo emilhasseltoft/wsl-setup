@@ -270,24 +270,57 @@ msg "Note: Claude's installer warns about ~/.local/bin not being in PATH and"
 msg "      suggests editing ~/.bashrc — you can ignore that."
 msg "      This script adds ~/.local/bin to PATH in zsh (your shell after restart)."
 
-# ---------- step 10: GitHub auth ----------
+# ---------- step 10: GitHub auth + SSH key ----------
 step "Authenticating with GitHub"
 
 if gh auth status >/dev/null 2>&1; then
-  msg "Already authenticated with GitHub. Skipping."
+  msg "Already authenticated with GitHub. Skipping login."
 else
-  echo "Next, you'll authenticate with GitHub. The CLI will:"
-  echo "  - Generate an SSH key on this machine"
-  echo "  - Upload the public key to your GitHub account"
-  echo "  - Configure git to use it for push/pull"
-  echo
-  echo "When asked, choose: GitHub.com → SSH → 'Yes' to generate a new SSH key → login with a web browser."
+  echo "Next, you'll log in to GitHub via your browser."
+  echo "Choose: GitHub.com → SSH → Login with a web browser."
   echo
   read -r -p "Press Enter to start..." _ </dev/tty
-  gh auth login --git-protocol ssh --hostname github.com --web </dev/tty
+  gh auth login --hostname github.com --git-protocol ssh --web </dev/tty
+fi
+
+# gh's auth flow doesn't reliably create + upload an SSH key, so do it
+# explicitly. Idempotent: skips generation if a key already exists, and
+# skips upload if this exact public key is already on GitHub.
+
+# 1. Generate an SSH key if none exists.
+mkdir -p "$HOME/.ssh" && chmod 700 "$HOME/.ssh"
+if [ ! -f "$HOME/.ssh/id_ed25519" ]; then
+  msg "Generating SSH key (~/.ssh/id_ed25519)..."
+  ssh-keygen -t ed25519 -C "$GIT_USER_EMAIL" -f "$HOME/.ssh/id_ed25519" -N ""
+fi
+
+# 2. Ensure the gh token has admin:public_key so we can upload the key.
+if ! gh auth status 2>&1 | grep -q "admin:public_key"; then
+  msg "Adding admin:public_key scope to gh auth (opens browser)..."
+  gh auth refresh -h github.com -s admin:public_key </dev/tty
+fi
+
+# 3. Upload the public key if it's not already on the account.
+PUBKEY_BODY="$(awk '{print $2}' "$HOME/.ssh/id_ed25519.pub")"
+if ! gh api /user/keys --jq '.[].key' 2>/dev/null | grep -qF "$PUBKEY_BODY"; then
+  msg "Uploading SSH public key to GitHub..."
+  gh ssh-key add "$HOME/.ssh/id_ed25519.pub" --title "WSL $(hostname) $(date +%Y-%m-%d)"
+else
+  msg "SSH public key already registered on GitHub. Skipping upload."
 fi
 
 gh auth setup-git
+
+# 4. Verify SSH to GitHub. ssh -T against GitHub always exits 1, so check
+# stderr for the success message instead of the exit code.
+SSH_OUTPUT="$(ssh -T -o StrictHostKeyChecking=accept-new -o ConnectTimeout=10 git@github.com 2>&1 || true)"
+if echo "$SSH_OUTPUT" | grep -q "successfully authenticated"; then
+  msg "SSH to GitHub: working ✓"
+else
+  warn "SSH connectivity test didn't authenticate. Output:"
+  warn "$SSH_OUTPUT"
+  warn "You may need to debug manually after setup completes."
+fi
 
 # ---------- step 11: default shell + first-run hook ----------
 step "Setting Zsh as the default shell and preparing the first-run guide"
