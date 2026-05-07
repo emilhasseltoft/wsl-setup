@@ -184,6 +184,7 @@ cat >> "$ZSHRC" <<'EOF'
 typeset -gA _OMZ_ASYNC_OUTPUT
 : ${RPROMPT:=""}
 : ${RPS1:=""}
+: ${RPS2:=""}
 : ${_omz_git_prompt_info:=""}
 : ${_OMZ_ASYNC_OUTPUT[_omz_git_prompt_info]:=""}
 
