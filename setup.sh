@@ -237,6 +237,8 @@ step "Installing mise"
 if [ ! -x "$HOME/.local/bin/mise" ]; then
   retry bash -c 'curl -fsSL --retry 3 --retry-delay 5 --retry-all-errors https://mise.run | sh'
 fi
+msg "Note: mise's installer suggests adding a line to ~/.bashrc — you can ignore that."
+msg "      This script already activates mise in zsh (your default shell after restart)."
 
 # ---------- step 9: Claude Code ----------
 step "Installing Claude Code"
