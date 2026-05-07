@@ -131,7 +131,11 @@ if [ ! -d "$HOME/.oh-my-zsh" ]; then
   retry curl -fsSL --retry 3 --retry-delay 5 --retry-all-errors \
     https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh \
     -o "$OMZ_INSTALLER"
-  RUNZSH=no CHSH=no sh "$OMZ_INSTALLER"
+  # Wrap the installer execution in retry too — its internal git clone of
+  # ohmyzsh.git can hit the same transient DNS failures we see elsewhere.
+  # rm -rf clears any partial state from a previous failed attempt so the
+  # installer can run fresh on each retry.
+  retry bash -c "rm -rf '$HOME/.oh-my-zsh'; RUNZSH=no CHSH=no sh '$OMZ_INSTALLER'"
   rm -f "$OMZ_INSTALLER"
   if [ ! -d "$HOME/.oh-my-zsh" ]; then
     err "Oh My Zsh installer ran but ~/.oh-my-zsh wasn't created. Re-run the script."
